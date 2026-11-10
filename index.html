@@ -635,7 +635,7 @@ html.so #fog i{animation-play-state:paused!important}
 <script>
 (function(){
   // === بيانات الدعوة: غيّرها من هنا بس ===
-  var C={n1:'Youssef',n2:'Nada',date:'2026-12-24T18:00',venue:'قاعة زمردة',addr:'شارع طلعت حرب – كورنيش إمبابة',city:'إمبابة',phone:'',mapUrl:'https://maps.app.goo.gl/zJYfDyeoeyCzFh2QA?g_st=aw',
+  var C={n1:'Youssef',n2:'Nada',date:'2026-12-24T18:00',venue:'قاعة زمردة',addr:'شارع طلعت حرب – كورنيش إمبابة',city:'إمبابة',phone:'',sheetUrl:'https://script.google.com/macros/s/AKfycbyL4DbvbKt7R2dKXWBfkGW7ravf1pexrzLQzV5ngajoJM4ykaMBzYZNeqpEYpw2Dr2aRw/exec',mapUrl:'https://maps.app.goo.gl/zJYfDyeoeyCzFh2QA?g_st=aw',
     prog:[['٦:٠٠ مساءً','استقبال المدعوين'],['٧:٠٠ مساءً','دخول العروسين'],['٨:٠٠ مساءً','العشاء'],['٩:٠٠ مساءً','الاحتفال']]};
   var $=function(i){return document.getElementById(i)},D=new Date(C.date),
       N=function(x){return arN(x)},P=function(x){return(x<10?'0':'')+x};
@@ -658,12 +658,22 @@ html.so #fog i{animation-play-state:paused!important}
     for(var i=0;i<4;i++)if(v[i]!==last[i]){var e=$('cd'+i);e.textContent=N(v[i]);last[i]=v[i]}}
   cd();setInterval(cd,1000);
   var tt;function toast(m){var t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(tt);tt=setTimeout(function(){t.classList.remove('on')},3200)}
-  function rs(ok){var el=$('rn'),n=el.value.trim();
+  var sending=false;
+  function rs(ok){if(sending)return;var el=$('rn'),n=el.value.trim();
     if(!n){el.classList.remove('bad');void el.offsetWidth;el.classList.add('bad');el.focus();toast('من فضلك اكتب اسمك أولًا');return}
-    var m='مرحبًا، أنا '+n+(ok?'. يسعدني تأكيد حضوري':'. أعتذر لعدم تمكني من الحضور')+' في حفل زفاف '+C.n1+' و '+C.n2+(ok?'. عدد الحضور: '+arN($('rg').value):'')+'.';
-    var w=$('rm').value.trim();if(w)m+=' رسالتي لكم: '+w;
-    toast('جارٍ فتح واتساب…');
-    window.open('https://wa.me/'+C.phone.replace(/\D/g,'')+'?text='+encodeURIComponent(m),'_blank')}
+    if(!C.sheetUrl){toast('نموذج التأكيد غير مفعّل بعد');return}
+    var w=$('rm').value.trim(),by=$('ry'),bx=$('rx'),ctrl=window.AbortController?new AbortController():null,
+        to=setTimeout(function(){if(ctrl)ctrl.abort()},15000);
+    var body=new URLSearchParams();
+    body.append('name',n);body.append('status',ok?'سأحضر':'أعتذر');body.append('guests',ok?$('rg').value:'0');body.append('message',w);
+    sending=true;by.disabled=bx.disabled=true;toast('جارٍ الإرسال…');
+    fetch(C.sheetUrl,{method:'POST',mode:'no-cors',body:body,signal:ctrl?ctrl.signal:undefined})
+      .then(function(){
+        toast(ok?'تم تأكيد حضورك، شكرًا لك ♥':'تم تسجيل اعتذارك، شكرًا لك');
+        el.value='';$('rm').value='';$('rm').dispatchEvent(new Event('input'));
+      })
+      .catch(function(){toast('تعذّر الإرسال، تأكد من الإنترنت وحاول مرة أخرى')})
+      .then(function(){clearTimeout(to);sending=false;by.disabled=bx.disabled=false})}
   $('ry').onclick=function(){rs(1)};$('rx').onclick=function(){rs(0)};
   $('rn').addEventListener('animationend',function(){this.classList.remove('bad')});
   var o=document.querySelectorAll('.orn');for(var i=1;i<o.length;i++)o[i].src=o[0].src;
